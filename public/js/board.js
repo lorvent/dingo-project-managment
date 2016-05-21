@@ -9,6 +9,7 @@ $(document).ready(function() {
         initCradDrag: function () {
             $(".card-con").each(function(index, el) {
                 $(el).sortable({
+                    scroll: true,
                     connectWith: ".card-con",
                     placeholder: "dashed-placeholder",
                     revert: 200,
@@ -40,6 +41,7 @@ $(document).ready(function() {
             });
         },
         initEditableListName: function () {
+            var that = this;
             $(".board-panel-title").each(function(index, el) {
                 $.fn.editable.defaults.mode = 'popup';
                 $(el).editable({
@@ -53,13 +55,22 @@ $(document).ready(function() {
                     placement: 'right', 
                     send:'always',
                     ajaxOptions: {
-                        dataType: 'json'
+                        dataType: 'json',
+                        success: function() {
+                            var listId = $(el).attr("data-pk");
+                            that.createActivity(listId, 'board_list', 'edit list name');
+                        }
                     }
                 });
             }); 
         },
-        bindUI: function () {
+        bindUI: function () { 
             var that = this;
+
+            $(".create-board-form").on("submit", function(e) {
+                e.preventDefault();
+                that.saveBoard();
+            });
 
             this.params['saveBoardBtn'].on('click', function(event) {
                 event.preventDefault();
@@ -131,31 +142,154 @@ $(document).ready(function() {
 
             $(document).on("click", ".sub-task-content", function() {
                 var isCompleted;
-                var isChecked = $(this).closest("div").find('input.sub-task-title-input').attr("checked");
+                var isChecked = $(this).closest("div").find('input.sub-task-title-input').attr("data-checked");
                 var taskId = $(this).attr("data-taskid");
 
-                if (typeof isChecked == typeof undefined) {
+                if (isChecked == 0) {
                     isCompleted = 1;
+                    $(this).closest("div").find('input.sub-task-title-input').attr("data-checked", 1);
                     that.updateTaskCompleted(taskId, isCompleted);
                 } else {
-                    $(this).closest("div").find('input.sub-task-title-input').attr('checked', 0);
                     isCompleted = 0;
+                    $(this).closest("div").find('input.sub-task-title-input').attr('data-checked', 0);
                     that.updateTaskCompleted(taskId, isCompleted);
                 }
             });
 
+            that.makeEditable('#select-board');
+
+            $(document).on('click', '#make-fv-board', function(event) {
+                event.preventDefault();
+                event.stopPropagation();
+
+                var starColor = $(this).css('color');
+                var boardId = $(this).closest('.board-link').attr("data-boardid");
+                var isFavourite;
+                if (starColor == "rgb(255, 255, 255)") {
+                    isFavourite = 1;
+
+                    $(this).css('color', "#FFEB3B");
+                    var boardCon = $(this).closest('.col-lg-3').clone();
+                    var boardTitle = $(boardCon).find("h2").text().trim();
+                    if ($(".my-fv-board").find('h1.board-starred-heading').length == 0) {
+                        $(".my-fv-board").prepend('<h1 class="board-starred-heading" style="margin-top: 10px;margin-left: 15px;font-weight: 500;font-size: 25px;"><span class="glyphicon glyphicon-star-empty starred-boards" aria-hidden="true"></span> Starred Boards</h1>');
+                    };                   
+
+                    if ($(".my-fv-board").find(".boards-col .col-lg-3").length == 0 ) {
+                        $(".my-fv-board").css('display', 'block');
+                    }
+                    $(boardCon).find(".col-lg-2").remove();
+                    $(".my-fv-board").find(".boards-col").prepend(boardCon);
+                    $("ul.stared-board-list-con").prepend(
+                        '<li style="margin-bottom: 5px;" data-boardid="'+boardId+'">'+
+                            '<a href="http://localhost:8000/board/'+boardId+'" style="color: #393333; padding-left: 0px; line-height: 20px; height: 20px; mar">'+boardTitle+'</a>'+
+                        '</li>'
+                    );
+                    that.createActivity(boardId, 'board', 'fav a board');
+                } else {
+                    $(this).css('color', "#FFF");
+                    isFavourite = 0;
+                    $(".my-fv-board").find(".boards-col .col-lg-3").filter("[data-boardid="+boardId+"]").remove();
+                    if ($(".my-fv-board").find(".boards-col .col-lg-3").length == 0 ) {
+                        $(".my-fv-board").css('display', 'none');
+                    };
+                    $("ul.stared-board-list-con").find("li").filter("[data-boardid="+boardId+"]").remove();
+                    that.createActivity(boardId, 'board', 'un-fav a board');
+                }
+                that.updateBoardFavourite(boardId, isFavourite);
+            }); 
+
+            $(".board-link").hover(function() {
+                $(this).find("#make-fv-board").slideDown("fast");
+            }, function() {
+                $(this).find("#make-fv-board").slideUp("fast");
+            });
+
+            $(document).on('click', '.board-link', function() {
+                var boardId = $(this).attr("data-boardid");
+                window.location.replace("board/"+boardId);
+            }); 
+
+            $(document).on('submit', '#selet-board-form', function(event) {
+                event.preventDefault();
+                var boardId = $("#select-board").val();
+                if(boardId.length > 0) {
+                    window.location.replace("board/"+boardId);
+                }
+            }); 
+
+            $(document).on('click', '.delete-list', function() {
+                var listId = $(this).data("listid");
+                that.deleteList(listId, this);
+            });
+        },
+        deleteList: function(listId, listTrash) {
+            var that = this;
+            swal({   
+                title: "Are you sure?",   
+                text: "You will not be able to recover this List with cards!",   
+                type: "warning",   
+                showCancelButton: true,   
+                confirmButtonColor: "#DD6B55",   
+                confirmButtonText: "Yes, delete it!",   
+                closeOnConfirm: false 
+                }, function(){   
+                    $.ajax({
+                        url: 'delete-list',
+                        type: 'POST',
+                        dataType: 'json',
+                        data: {
+                            listId: listId 
+                        },
+                        success: function (data) {
+                            $(listTrash).closest(".bcategory-list").remove();
+                            swal("Deleted!", "Your file was successfully deleted!", "success");
+                            that.createActivity(listId, 'board_list', 'deleted a list');
+                        },
+                        error: function (error) {
+                            var response = JSON.parse(error.responseText);
+                            swal("Oops", "We couldn't connect to the server!", "error");
+                        }
+                    });
+            });
+        },
+        updateBoardFavourite: function (boardId, isFavourite) {
+            $.ajax({
+                url: 'update-board-favourite',
+                type: 'POST',
+                dataType: 'json',
+                data: {
+                    boardId: boardId,
+                    isFavourite: isFavourite
+                },
+                success: function (data) {
+                    // console.log(data);
+                },
+                error: function (error) {
+                    console.log(error); 
+                }
+            });
         },
         updateTaskCompleted: function (taskId, isCompleted) {
+            var cardId = $(document).find('#card-detail').attr("data-cardid");
             $.ajax({
                 url: 'update-task-completed',
                 type: 'POST',
                 dataType: 'json',
                 data: {
                     taskId: taskId, 
-                    isCompleted: isCompleted
+                    isCompleted: isCompleted,
+                    cardId: cardId
                 },
                 success: function (data) {
-                    console.log(data);
+                    var perTaskCompleted = Math.floor(data.totalTasksCompleted/data.totalTasks*100);
+                    $(document).find(".per-tasks-completed").addClass('active');
+                    $(document).find(".per-tasks-completed").attr("aria-valuenow", perTaskCompleted);
+                    $(document).find(".per-tasks-completed").css('width', perTaskCompleted+"%");
+                    $(document).find(".per-tasks-completed").find(".show").text(perTaskCompleted+"% Tasks Completed");
+                    setTimeout(function () {
+                        $(document).find(".per-tasks-completed").removeClass('active');
+                    }, 2000);
                 },
                 error: function (error) {
                     console.log(error);
@@ -163,6 +297,7 @@ $(document).ready(function() {
             });
         },
         saveTask: function (taskTitle, cardId) {
+            var that = this;
             $.ajax({
                 url: 'save-task',
                 type: 'POST',
@@ -175,16 +310,40 @@ $(document).ready(function() {
                     var task = '<div class="form-group sub-task-con">'+
                             '<div class="row">'+
                                 '<div class="col-lg-11">'+
-                                    '<input class="magic-checkbox sub-task-title-input" type="checkbox" name="layout" id="' + data.id + '" value="option" ' + ((data.is_completed == 1) ? ' checked="checked"' : '') + '>'+
-                                    '<label for="' + data.id + '" class="sub-task-content" data-taskid="' + data.id + '">' + data.task_title + '</label>'+
+                                    '<input class="magic-checkbox sub-task-title-input" type="checkbox" name="layout" id="' + data.card["id"] + '" value="option" ' + ((data.card["is_completed"] == 1) ? ' checked="checked" data-checked="1"' : 'data-checked="0"') + '>'+
+                                    '<label for="' + data.card["id"] + '" class="sub-task-content" data-taskid="' + data.card["id"] + '">' + data.card["task_title"] + '</label>'+
                                 '</div>'+
                                 '<div class="col-lg-1">'+
-                                    '<a href="" class="delete-task" data-taskId="' + data.id + '"><span class="glyphicon glyphicon-trash" aria-hidden="true"></span></a>'+
+                                    '<a href="" class="delete-task" data-taskId="' + data.card["id"] + '"><span class="glyphicon glyphicon-trash" aria-hidden="true"></span></a>'+
                                 '</div>'+
                             '</div>'+
                         '</div>';
                     $("#card-detail").find(".task-list-con").prepend(task); 
                     $('#card-detail').find("#task-description-input").val("");
+                    
+                    var perTaskCompleted = Math.floor(data.totalTasksCompleted/data.totalTasks*100);
+                    $(document).find(".per-tasks-completed").addClass('active');
+                    $(document).find(".per-tasks-completed").attr("aria-valuenow", perTaskCompleted);
+                    $(document).find(".per-tasks-completed").css('width', perTaskCompleted+"%");
+                    $(document).find(".per-tasks-completed").find(".show").text(perTaskCompleted+"% Tasks Completed");
+                    setTimeout(function () {
+                        $(document).find(".per-tasks-completed").removeClass('active');
+                    }, 2000);
+
+                    if ($(".list-group-item").filter("[data-cardid="+cardId+"]").find('ul.card-description-intro #totalTasks').length == 0) {
+                        $(".list-group-item").filter("[data-cardid="+cardId+"]").find('ul.card-description-intro').append(
+                            '<li id="totalTasks">'+
+                                '<a href="#" data-placement="bottom" data-toggle="tooltip" title="" data-totaltask="1" data-original-title="This card have 1 tasks."><span class="glyphicon glyphicon-check" aria-hidden="true"></span></a>'+
+                            '</li>'
+                        );
+                    } else {
+                        var totalTasks = $(".list-group-item").filter("[data-cardid="+cardId+"]").find('#totalTasks a').attr("data-totaltask");
+                        totalTasks++;
+                        $(".list-group-item").filter("[data-cardid="+cardId+"]").find('#totalTasks a').attr("data-original-title", "This card have "+ totalTasks +" tasks.");                                                            
+                        $(".list-group-item").filter("[data-cardid="+cardId+"]").find('#totalTasks a').attr("data-totaltask", totalTasks);                                                            
+                    }
+                    that.reInitializeToolTip();
+                    that.createActivity(cardId, 'card_task', 'task is added');    
                 },
                 error: function (error) {
                     console.log(error);
@@ -221,6 +380,22 @@ $(document).ready(function() {
                         '</li>';
                     $("#card-detail").find("ul.commentList").prepend(comment);
                     $('#card-detail').find("#comment-input").val("");
+                    
+                    if ($(".list-group-item").filter("[data-cardid="+cardId+"]").find('ul.card-description-intro  #totalComments').length == 0) {
+                        $(".list-group-item").filter("[data-cardid="+cardId+"]").find('ul.card-description-intro').append(
+                            '<li id="totalComments">'+
+                                '<a href="#" data-placement="bottom" data-toggle="tooltip" title="" data-totalcomments="1" data-original-title="This card have 1 comments."><span class="glyphicon glyphicon-comment" aria-hidden="true"></span></a>'+
+                            '</li>'
+                        );
+                    } else {
+                        var totalComments = $(".list-group-item").filter("[data-cardid="+cardId+"]").find('#totalComments a').attr("data-totalcomments");
+                        totalComments++;
+                        $(".list-group-item").filter("[data-cardid="+cardId+"]").find('#totalComments a').attr("data-original-title", "This card have "+ totalComments +" comments.");                                                            
+                        $(".list-group-item").filter("[data-cardid="+cardId+"]").find('#totalComments a').attr("data-totalComments", totalComments);                                                            
+                    }
+
+                    that.createActivity(data[0].id, 'comment', 'posted a comment'); 
+                    that.reInitializeToolTip();
                 },
                 error: function (error) {
                     console.log(error);
@@ -228,6 +403,7 @@ $(document).ready(function() {
             });
         },
         saveChanges: function (cardId) {
+            var that = this;
             var cardName = $(document).find("#card_title_editable").text();  
             var cardDescription = $(document).find("#card_description_editable").text();
             var cardTags = $(document).find("#card-tags-input").val();
@@ -248,15 +424,36 @@ $(document).ready(function() {
                     cardId: cardId
                 },
                 success: function (data) {
-                    $(".list-group-item").filter("[data-cardid="+data.cardId+"]").text(data.cardTitle);
+                    $(".list-group-item").filter("[data-cardid="+data.cardId+"]").find("p").text(data.cardTitle);
+                    if(cardColor.length > 0 ) {
+                        $(document).find(".list-group-item").filter("[data-cardid="+data.cardId+"]").css('border-top', '5px solid #'+cardColor);
+                    } else {
+                        $(document).find(".list-group-item").filter("[data-cardid="+data.cardId+"]").removeAttr("style");
+                    }
+                    if(cardDescription != "Empty") {
+                        $(document).find(".list-group-item").filter("[data-cardid="+data.cardId+"]").find(".card-description-intro #card_description").remove();
+                        $(document).find(".list-group-item").filter("[data-cardid="+data.cardId+"]").find(".card-description-intro").prepend('<li id="card_description">'+
+                            '<a href="#" data-placement="bottom" data-toggle="tooltip" title="" data-original-title="This card has a description."><span class="glyphicon glyphicon-align-left" aria-hidden="true"></span></a>'+
+                        '</li>');
+                    } else {
+                        $(document).find(".list-group-item").filter("[data-cardid="+data.cardId+"]").find(".card-description-intro #card_description").remove();
+                    }
+
+                    that.reInitializeToolTip();
                     $('.modal#card-detail').modal("hide");
+                    that.createActivity(data.cardId, 'board_card', 'card is edited');
                 },
                 error: function (error) {
                     console.log(error);
                 }
             });
         },
+        reInitializeToolTip: function () {
+            $('[data-toggle="tooltip"]').tooltip();
+        },
         deleteTask: function (taskId, deleteTaskBtn) {
+            var that = this;
+            var cardId = $(document).find('#card-detail').attr("data-cardid");
             swal({   
                     title: "Are you sure?",   
                     text: "You will not be able to recover this Task!",   
@@ -271,10 +468,34 @@ $(document).ready(function() {
                         type: 'POST',
                         dataType: 'json',
                         data: {
-                            taskId: taskId 
+                            taskId: taskId,
+                            cardId: cardId
                         },
                         success: function (data) {
                             $(deleteTaskBtn).closest('.form-group').remove();
+                            var cardId = $('.modal#card-detail').attr('data-cardid');
+                            var totalTasks = $(".list-group-item").filter("[data-cardid="+cardId+"]").find('#totalTasks a').attr("data-totaltask");
+                            totalTasks--;
+                            $(".list-group-item").filter("[data-cardid="+cardId+"]").find('#totalTasks a').attr("data-original-title", "This card have "+ totalTasks +" tasks.");                                                            
+                            $(".list-group-item").filter("[data-cardid="+cardId+"]").find('#totalTasks a').attr("data-totaltask", totalTasks);                                                            
+
+                            var perTaskCompleted;
+                            
+                            if (data.totalTasks != 0) {
+                                perTaskCompleted = Math.floor(data.totalTasksCompleted/data.totalTasks*100);
+                            } else {
+                                perTaskCompleted = 0;
+                                $(".list-group-item").filter("[data-cardid="+cardId+"]").find('#totalTasks').remove();
+                            }
+
+                            $(document).find(".per-tasks-completed").addClass('active');
+                            $(document).find(".per-tasks-completed").attr("aria-valuenow", perTaskCompleted);
+                            $(document).find(".per-tasks-completed").css('width', perTaskCompleted+"%");
+                            $(document).find(".per-tasks-completed").find(".show").text(perTaskCompleted+"% Tasks Completed");
+                            setTimeout(function () {
+                                $(document).find(".per-tasks-completed").removeClass('active');
+                            }, 2000);
+                            that.createActivity(cardId, 'card_task', 'task is deleted'); 
                             swal("Deleted!", "Your file was successfully deleted!", "success");
                         },
                         error: function (error) {
@@ -324,12 +545,18 @@ $(document).ready(function() {
                     dueDateInput.val(dueDate).change();
 
 
-                    var taskList = "";
+                    var taskList = "",
+                        countCompletedTasks = 0,
+                        countTotalTasks = 0;
                     $.each(data.task, function(index, val) {
+                        countTotalTasks++;
+                        if(val.is_completed) {
+                            countCompletedTasks++;
+                        }
                         taskList += '<div class="form-group sub-task-con">'+
                             '<div class="row">'+
                                 '<div class="col-lg-11">'+
-                                    '<input class="magic-checkbox sub-task-title-input" type="checkbox" name="layout" id="' + val.id + '" value="option" ' + ((val.is_completed == 1) ? ' checked="checked"' : '') + '>'+
+                                    '<input class="magic-checkbox sub-task-title-input" type="checkbox" name="layout" id="' + val.id + '" value="option" ' + ((val.is_completed == 1) ? 'checked="checked" data-checked="1"' : 'data-checked="0"') + '>'+
                                     '<label for="' + val.id + '" class="sub-task-content" data-taskid="' + val.id + '">' + val.task_title + '</label>'+
                                 '</div>'+
                                 '<div class="col-lg-1">'+
@@ -338,6 +565,17 @@ $(document).ready(function() {
                             '</div>'+
                         '</div>';
                     });
+                    var perTaskCompleted;
+                    if (countTotalTasks != 0) {
+                        perTaskCompleted = Math.floor(countCompletedTasks/countTotalTasks*100);
+                    } else {
+                        perTaskCompleted = 0;
+                    }
+                    
+                    $(document).find(".per-tasks-completed").attr("aria-valuenow", perTaskCompleted);
+                    $(document).find(".per-tasks-completed").css('width', perTaskCompleted+"%");
+                    $(document).find(".per-tasks-completed").find(".show").text(perTaskCompleted+"% Tasks Completed");
+
                     $("#card-detail").find(".task-list-con").empty();
                     $("#card-detail").find(".task-list-con").append(taskList);
 
@@ -443,10 +681,6 @@ $(document).ready(function() {
                 case "#card_description_editable":
                     var cardDescription = $(elementId).text();
                     $("#card-detail").find(elementId).editable({
-                        validate: function(value) {
-                            if($.trim(value) == '') 
-                                return 'Value is required.';
-                        },
                         inputclass: "x-editable-input", 
                         type: 'text', 
                         placement: 'right',
@@ -478,12 +712,16 @@ $(document).ready(function() {
                     var $select = $("#card-detail").find(elementId).selectize();
                     $select[0].selectize.setValue(opt);
                     break;
+                case "#select-board":
+                    var my = $(elementId).selectize();
+                    $(my).next(".selectize-control").find(".selectize-input").css('width', '218px');
+                    $(my).next(".selectize-control").find(".selectize-dropdown").css('width', '210px');
                 default:
-                    console.log('Default');
                     break;
             }
         },
         deleteCard: function (cardId, cardIdCon) {
+            var that = this;
             swal({   
                 title: "Are you sure?",   
                 text: "You will not be able to recover this List with cards!",   
@@ -503,6 +741,7 @@ $(document).ready(function() {
                         success: function (data) {
                             $(cardIdCon).remove();
                             $('.modal#card-detail').modal("hide");
+                            that.createActivity(data.id, 'board_card', 'deleted a card');
                             swal("Deleted!", "Your file was successfully deleted!", "success");
                         },
                         error: function (error) {
@@ -521,11 +760,19 @@ $(document).ready(function() {
                 data: data,
                 success: function (data) {
                     $(that.targetList).find('.card-con').append(
-                        '<li class="list-group-item board-list-items ui-sortable-handle" id="card_'+data.id+'" data-cardid="'+ data.id +'"><a data-toggle="modal" href="#card-detail">'+ data.card_title +'</a></li>'
+                        '<li class="list-group-item board-list-items ui-sortable-handle" id="card_'+data.id+'" data-cardid="'+ data.id +'" data-toggle="modal" href="#card-detail">'+
+                            '<div class="row">'+
+                                '<div class="col-lg-12">'+
+                                    '<p style="margin-bottom: 0px;" class="pull-left">'+data.card_title+'</p>'+
+                                    '<ul class="card-description-intro list-inline pull-right"></ul>'+
+                                '</div>'+
+                            '</div>'+                                            
+                        '</li>'
                     );
                     $(that.targetList).find('form').hide();
                     $(that.targetList).find('form textarea').val('');
                     $(that.targetList).find('a.show-input-field').show();
+                    that.createActivity(data.id, 'board_card', 'created a card');
                 },
                 error: function (error) {
                     var response = JSON.parse(error.responseText);
@@ -550,33 +797,57 @@ $(document).ready(function() {
                 success: function (data) {
                     $(that.params['createBoardLink']).closest(".col-lg-3").before(
                         '<div class="col-lg-3">'+
-                            '<a data-toggle="modal" href="http://localhost:8000/board?id='+data.id+'" class="board-main-link-con">'+
-                                '<div class="board-link">'+
-                                    '<div class="row">'+
-                                        '<div class="col-lg-8">'+
-                                            '<h2 style="font-size: 20px; ">'+
+                            '<div class="board-link" style="cursor: pointer;" data-boardid="'+data.id+'">'+
+                                '<div class="row">'+
+                                    '<div class="col-lg-10">'+
+                                        '<h2 style="margin-top: 5px;">'+
+                                            '<a href="http://localhost:8000/board?id='+data.id+'" class="board-main-link-con" style="font-size: 20px; color: #FFF;">'+
                                                 data.boardTitle +
-                                            '</h2>'+
-                                        '</div>'+
+                                            '</a>'+
+                                        '</h2>'+
+                                    '</div>'+
+                                    '<div class="col-lg-2">'+
+                                        '<p style="margin-top: 12px;">'+
+                                            '<a href="#" style="font-size: 20px; color: #FFF;" id="make-fv-board"><span class="glyphicon glyphicon-star" aria-hidden="true"></span></a>'+
+                                        '</p>'+
                                     '</div>'+
                                 '</div>'+
-                            '</a>'+
+                            '</div>'+
                         '</div>'
                     );
                     that.params['createNewBoardModal'].modal('hide') 
                     that.params['boardTitle'].val('');
                     that.params['boardTitleCon'].removeClass('has-error');
-                    that.params['boardTitleCon'].find('.alert').remove();
+                    that.params['boardTitleCon'].find('.help-block').remove();
+                    that.createActivity(data.id, 'board', 'created a board');
                 },
                 error: function (error) {
                     var response = JSON.parse(error.responseText);
-                    that.params['boardTitleCon'].find('.alert').empty();
+                    that.params['boardTitleCon'].find('.help-block').remove();
                     $.each(response, function(index, val) {
                         that.params['boardTitleCon'].addClass('has-error');
-                        that.params['boardTitleCon'].prepend('<div class="alert alert-danger"><li>'+ val +'</li></div>');
+                        that.params['boardTitleCon'].append('<span class="help-block"><strong>'+ val +'</strong></span>');
                     });
                 }
             }); 
+        },
+        createActivity: function(activity_in_id, changed_in, activity_description) {
+            $.ajax({
+                url: 'create-user-activity',
+                type: 'POST',
+                dataType: 'json',
+                data: {
+                    activity_in_id: activity_in_id, 
+                    changed_in: changed_in, 
+                    activity_description: activity_description
+                }, 
+                success: function (data) {
+                    console.log("data")
+                },
+                error: function(error) {
+                    console.log(error);
+                }
+            });
         },
         saveList: function (data, curentBtnClicked) {
             that = this;
@@ -586,7 +857,6 @@ $(document).ready(function() {
                 dataType: 'json',
                 data: data,
                 success: function (data) {
-                    console.log(data);
                     $(curentBtnClicked).closest(".bcategory-list").before(
                         '<div class="bcategory-list" data-list-id="' + data.id + '">'+
                             '<div class="panel panel-default">'+
@@ -629,6 +899,7 @@ $(document).ready(function() {
                     that.params['boardTitle'].val('');
                     that.params['boardTitleCon'].removeClass('has-error');
                     that.params['boardTitleCon'].find('.alert').remove();
+                    that.createActivity(data.id, 'board_list', 'created a list');
                 },
                 error: function (error) {
                     var response = JSON.parse(error.responseText);

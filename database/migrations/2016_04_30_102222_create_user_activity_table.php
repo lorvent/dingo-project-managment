@@ -3,7 +3,7 @@
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\Migrations\Migration;
 
-class CreateBoardTable extends Migration
+class CreateUserActivityTable extends Migration
 {
     /**
      * Run the migrations.
@@ -12,16 +12,18 @@ class CreateBoardTable extends Migration
      */
     public function up()
     {
-        Schema::dropIfExists('board');
-        Schema::create('board', function (Blueprint $table) {
-            $table->increments('id');
+        Schema::create('user_activity', function(Blueprint $table) {
+            $table->increments("id");
+            
             $table->integer('user_id')->unsigned();
             $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
-            $table->string('boardTitle');
-            $table->boolean('is_starred');
-            $table->string('boardPrivacyType');
+            
+            $table->string("changed_in");
+            $table->integer("activity_in_id");
+            $table->text("activity_description");
+            
             $table->timestamps();
-        });
+        }); 
     }
 
     /**
@@ -31,6 +33,6 @@ class CreateBoardTable extends Migration
      */
     public function down()
     {
-        Schema::drop('board');
+        Schema::drop('user_activity');
     }
 }

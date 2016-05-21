@@ -6,10 +6,10 @@
                 <h4 class="modal-title text-center">Create Board</h4>
             </div>
             <div class="modal-body">
-                <form action="" method="POST" role="form">
+                <form action="" method="POST" role="form" class="create-board-form">
                     <div class="form-group" id="boardTitleCon">
                         <label for="title" class="control-label">Title</label>
-                        <input type="text" class="form-control" id="boardTitle" placeholder='Like "Home Construction" for example...' name="boardName">
+                        <input type="text" class="form-control" id="boardTitle" name="boardName">
                     </div>
                     <div class="form-group">
                         <h4>Team</h4>
@@ -207,6 +207,15 @@
                                     <span class="input-group-btn">
                                         <button type="button" class="btn btn-default" id="submit-task">Add</button>
                                     </span>
+                                </div>
+                            </div>
+                            <div class="row" style="margin-top: 19px; margin-bottom: 19px;">
+                                <div class="col-lg-8 col-lg-offset-2">
+                                    <div class="progress">
+                                        <div class="progress-bar progress-bar-striped per-tasks-completed" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width:0%">
+                                          <span class="show"></span>
+                                        </div>
+                                      </div>
                                 </div>
                             </div>
                             <div class="task-list-con frame" style="margin-top: 12px; max-height: 235px; overflow: scroll;"></div>

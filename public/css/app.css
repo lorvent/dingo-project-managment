@@ -1,5 +1,5 @@
-body {
-    font-family: "Open Sans";
+body { 
+    font-family: "Open Sans", sans-serif; 
 }
 
 label {
@@ -35,9 +35,9 @@ li {
 }
 
 h1 .starred-boards {
-    font-size: 22px;
+    /*font-size: 22px;
     top: -2px;
-    margin-right: 15px;
+    margin-right: 15px;*/
 }
 
 .boards-col {
@@ -45,7 +45,9 @@ h1 .starred-boards {
 }
 
 .board-create {
-    background-color: #E2E4E6;
+    background-color: rgba(255, 255, 255, 0) !important;
+    border: 1px solid #D2D2D2;
+    box-shadow: 0 1px 1px rgba(0,0,0,.05);
     border-radius: 5px;
     height: 150px;
 }
@@ -56,10 +58,6 @@ h1 .starred-boards {
     background-color: #0079BF;
     color: white;
     margin-bottom: 20px;
-}
-
-.board-create {
-    background-color: #E2E4E6 !important;
 }
 
 .board-link:hover {
@@ -77,12 +75,11 @@ h1 .starred-boards {
 }
 
 .board-create-head {
-    margin-top: 30px;
-    padding-left: 33px;
-}
-
-.my-board {
-    margin-top: 38px;
+    text-align: center;
+    color: rgba(51, 51, 51, 0.79);
+    font-size: 21px;
+    margin-top: 45px;
+    /*padding-left: 33px;*/
 }
 
 .dingo-dropdown {
@@ -133,6 +130,9 @@ h1 .starred-boards {
 }
 
 .board-panel-title {
+    font-weight: 600 !important;
+    /*font-family: "open sans";*/
+    border-bottom-color: rgba(0, 0, 0, 0.65) !important;
     cursor: text;
     padding-bottom: 3px;
     font-size: 17px;
@@ -395,7 +395,7 @@ clip: rect(-6px,185px,14px,25px);
 }
 
 .list-group-item:hover {
-    background-color: #d6dadc;
+    background-color: #F5F5F5;
     cursor: pointer;
 }
 
@@ -422,18 +422,17 @@ clip: rect(-6px,185px,14px,25px);
 }
 
 .card-list-con {
-    max-height: 455px !important;
+    max-height: 500px !important;
     background-color: whitesmoke;
 }
 
 .dashed-placeholder {
-    border: 2px dashed #999;
+    border-radius: 3px;
+    border: 1px dashed #999;
     width: 298px;
     height: 42px;
-    background: #ccc;
+    background: #f5f5f5;
     margin-bottom: 5px;
-/*    margin: 10px 0px 50px 0px;
-    padding: 8px 0px 10px 6px;*/
 }
 
 .addSubTaskCon {
@@ -528,4 +527,71 @@ ul.commentList li {
     background-color: black;
     z-index:9999;
     color:white;
+}
+
+.sidebar-inner ul li a {
+    color: #444; 
+    display: block; 
+    font-size: 15px; 
+    height: 64px; 
+    line-height: 64px; 
+    padding: 0 15px;
+}
+
+/* Type Js */
+.typed-cursor{
+    opacity: 1;
+    -webkit-animation: blink 0.7s infinite;
+    -moz-animation: blink 0.7s infinite;
+    animation: blink 0.7s infinite;
+}
+@keyframes blink{
+    0% { opacity:1; }
+    50% { opacity:0; }
+    100% { opacity:1; }
+}
+@-webkit-keyframes blink{
+    0% { opacity:1; }
+    50% { opacity:0; }
+    100% { opacity:1; }
+}
+@-moz-keyframes blink{
+    0% { opacity:1; }
+    50% { opacity:0; }
+    100% { opacity:1; }
+}
+/* Type Js */
+
+.horizontal-container .panel-heading, .horizontal-container .panel-body {
+    background-color: #FFFFFF;
+}
+
+.progress {
+  position: relative;
+}
+
+.progress span {
+    position: absolute;
+    display: block;
+    width: 100%;
+    color: #333;
+    font-weight: 700;
+}
+
+.stared-board-list-con li a:hover {
+  font-weight: 500;
+}
+
+.user-profile-intro {
+  background-color: rgba(96, 125, 139, 0.02);
+  padding-top: 30px;
+  padding-bottom: 30px;
+  color: #393333;
+  border: 1px solid #DCDCDC;
+  border-radius: 4px;
+  box-shadow: 0px 0px 8px rgba(0, 0, 0, 0.17);
+}
+
+#make-fv-board {
+    display: none;
 }

@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
     <title>Dingo</title>
-    <link href="{{ asset('css/bootstrap.min.css') }}" rel="stylesheet">
+    <link href="{{ asset('css/bootstrap.css') }}" rel="stylesheet">
     <link href="{{ asset('css/app.css') }}" rel="stylesheet">
     <link href="{{ asset('css/jquery-ui.css') }}" rel="stylesheet">
     <link href="{{ asset('css/bootstrap-editable.css') }}" rel="stylesheet"/>
@@ -31,15 +31,7 @@
     </div>
     @include('layouts.partials.modal')
     @include('layouts.partials.navigation')
-        @if(Session::has('alert'))
-            <div style="position: absolute; width: 375px; text-align: center; left: 480px;">
-                <div class="alert alert-info">
-                    <li class="list-unstyled">{{ Session::get('alert') }}</li>
-                </div>
-            </div>
-        @endif
-        @yield('content')
-    {{-- </div>     --}}
+    @yield('content')
 
     <script src="{{ asset('js/jquery.js') }}"></script>
     <script src="{{ asset('js/jquery-ui.js') }}"></script>
@@ -54,5 +46,6 @@
     <script src="{{ asset('js/board.js') }}"></script>
     <script src="{{ asset('js/bootstrap-datetimepicker.min.js') }}"></script>
     <script src="{{ asset('js/sidebar.js') }}"></script>
+    <script src="{{ asset('js/typed.min.js') }}"></script>
 </body>
 </html>
