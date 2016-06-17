@@ -213,10 +213,14 @@ $(document).ready(function() {
             $(document).on('submit', '#selet-board-form', function(event) {
                 event.preventDefault();
                 var boardId = $("#select-board").val();
-                if(boardId.length > 0) {
-                    window.location.replace("board/"+boardId);
+                var location = window.location;
+
+                if (location.pathname.substr(1, 5) === "board") {
+                    location.replace(boardId);
+                } else {
+                    location.replace("board/" + boardId);
                 }
-            }); 
+            });
 
             $(document).on('click', '.delete-list', function() {
                 var listId = $(this).data("listid");
@@ -322,6 +326,9 @@ $(document).ready(function() {
                     $('#card-detail').find("#task-description-input").val("");
                     
                     var perTaskCompleted = Math.floor(data.totalTasksCompleted/data.totalTasks*100);
+                    if(isNaN(perTaskCompleted)) {
+                        perTaskCompleted = 0;
+                    };
                     $(document).find(".per-tasks-completed").addClass('active');
                     $(document).find(".per-tasks-completed").attr("aria-valuenow", perTaskCompleted);
                     $(document).find(".per-tasks-completed").css('width', perTaskCompleted+"%");

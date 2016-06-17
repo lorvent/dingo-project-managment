@@ -12,16 +12,25 @@ use Validator;
 
 class UserController extends Controller
 {
+    protected $board;
+    protected $user;
+
+    public function __construct(Board $board, User $user)
+    {
+        $this->board = $board;
+        $this->user = $user;
+    }
+
     /**
      * Get the dashboard view
      * @return view home view
      */
     public function getDashboard()
     {
-        $boards        = Board::where(['user_id' => Auth::id(),])->get();
-        $starredBoards = Board::where(['user_id' => Auth::id(), 'is_starred' => 1])->orderBy('created_at', 'desc')->get();
+        $boards = $this->board->getUserBoards(Auth::id());
+        $starredBoards = $this->board->getUserStarredBoards(Auth::id());
 
-        return view('user.home', compact('boards', 'recentBoards', 'starredBoards'));
+        return view('user.home', compact('boards', 'starredBoards'));
     }
 
     /**
@@ -39,7 +48,7 @@ class UserController extends Controller
      */
     public function getProfile()
     {
-        $boards = Board::where(['user_id' => Auth::id(),])->get();
+        $boards = $this->board->getUserBoards(Auth::id());
         $page = 'profile';
         return view('user.profile', compact('boards', 'page'));
     }
@@ -95,11 +104,8 @@ class UserController extends Controller
             'password'              => 'required|confirmed',
             'password_confirmation' => 'required',
         ]);
-        User::create([
-            'name'     => $request->get('name'),
-            'email'    => $request->get('email'),
-            'password' => \Hash::make($request->get('password')),
-        ]);
+
+        $this->user->createUserAccount($request);
 
         return redirect()->route('auth.login')->with('alert', 'Your account has been created.');
     }

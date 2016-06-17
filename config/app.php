@@ -52,7 +52,7 @@ return [
     |
     */
 
-    'timezone' => 'Asia/Karachi',
+    'timezone' => env("TIMEZONE","Asia/Karachi"),
 
     /*
     |--------------------------------------------------------------------------
@@ -91,7 +91,7 @@ return [
     |
     */
 
-    'key' => env('APP_KEY'),
+    'key' => env('APP_KEY', '9TSL9BsEjZyoM9BjX9du0XaLnCDi4m4Z'),
 
     'cipher' => 'AES-256-CBC',
 
